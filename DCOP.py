@@ -48,8 +48,8 @@ def create_random_dcop(num_agents, edge_density):
     G.remove_edges_from(edges)
     G.add_edges_from(keep_edges)
     # Assign random costs to edges
-    for u, v in G.edges():
-        G[u][v]['cost'] = np.random.randint(1, 11)  # Random cost between 1 and 10
+    # for u, v in G.edges():
+    #     G[u][v]['cost'] = np.random.randint(1, 11)  # Random cost between 1 and 10
     return G
 
 def create_cost_tables(G):

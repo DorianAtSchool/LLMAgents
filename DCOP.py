@@ -55,7 +55,7 @@ def create_random_dcop(num_agents, edge_density):
 def create_cost_tables(G):
     # Each edge has a cost table based on the possible actions of the agents (both agents have actions between 0-2, costing between 1- 10)
     for u, v in G.edges():
-        G[u][v]['cost_table'] = np.random.randint(1, 11, size=(3, 3))
+        G[u][v]['cost_table'] = np.random.randint(1, 101, size=(3, 3))
 
 def assign_initial_actions(G):
     # Randomly assign initial actions to agents
@@ -68,44 +68,71 @@ def run_dsa_algorithm(G, num_iterations):
     for i in range(num_iterations):
         for agent in G.nodes():
             agent_action = G.nodes[agent]['action']
-            # change_action = np.random.randint(0, 3)
             action_gains = {0: 0, 1: 0, 2: 0}
+            optimal_action = agent_action
             for change_action in range(3):
-                cur_gain = 0
+                max_gain = 0
                 for neighbor in G.neighbors(agent):
                     # receive information from neighbors
                     neighbor_action = G.nodes[neighbor]['action']
-                    # calculate the maximum gain if action is changed
+                    # calculate the maximum decrease in cost if action is changed
                     cur_cost = G[agent][neighbor]['cost_table'][agent_action][neighbor_action]
                     change_action_cost = G[agent][neighbor]['cost_table'][change_action][neighbor_action]
-                    action_gains[change_action] += change_action_cost - cur_cost
-            action_gains = [key for key in action_gains.keys() if action_gains[key] > 0]
-            #choose random index of action
-            if len(action_gains) > 0:
-                optimal_action = np.random.choice(action_gains)
-            else:
-                optimal_action = agent_action
-            # get the maximum gain from neighbors
-            # max_neighbor_gain = 0
-            # for neighbor in G.neighbors(agent):
-            #     neighbor_action = G.nodes[neighbor]['action']
-            #     cur_cost = G[agent][neighbor]['cost_table'][agent_action][neighbor_action]
-            #     change_action_cost = G[agent][neighbor]['cost_table'][optimal_action][neighbor_action]
-            #     cur_gain = change_action_cost - cur_cost
-            #     max_neighbor_gain = max(max_neighbor_gain, cur_gain)
+                    action_gains[change_action] +=  cur_cost - change_action_cost
+
+                if action_gains[change_action] > max_gain:
+                    max_gain = action_gains[change_action]
+                    optimal_action = change_action
             
-            # if max_neighbor_gain < max_agent_gain:
-            #     # change action if agent gain is more than neighbors
-            #     G.nodes[agent]['action'] = optimal_action
+            #choose random index of action with 95% probability of choosing the optimal action
+            
+            threshold = 0.95
+            p = [.025 if i != optimal_action else threshold for i in range(3)]
+            optimal_action = np.random.choice([0, 1, 2], p=p)
             G.nodes[agent]['action'] = optimal_action
-            # Calculate the avg cost
-            avg_cost = 0
-            for u,v in G.edges():
-                avg_cost += G[u][v]['cost_table'][G.nodes[u]['action']][G.nodes[v]['action']]
-            avg_cost = avg_cost / len(G.edges())
-            average_costs.append(avg_cost)
+        # Calculate the avg cost per iteration
+        avg_cost = 0
+        for u,v in G.edges():
+            avg_cost += G[u][v]['cost_table'][G.nodes[u]['action']][G.nodes[v]['action']]
+        avg_cost = avg_cost / len(G.edges())
+        average_costs.append(avg_cost)
 
     return average_costs
+
+def run_dsan_algorithm(G, num_iterations):
+    # Implement DSA algorithm here
+    average_costs = []
+    for i in range(num_iterations):
+        for agent in G.nodes():
+            probs = []
+            agent_action = G.nodes[agent]['action']
+            action_gains = {0: 0, 1: 0, 2: 0}
+            
+            for change_action in range(3):
+                for neighbor in G.neighbors(agent):
+                    # receive information from neighbors
+                    neighbor_action = G.nodes[neighbor]['action']
+                    # calculate the maximum decrease in cost if action is changed
+                    cur_cost = G[agent][neighbor]['cost_table'][agent_action][neighbor_action]
+                    change_action_cost = G[agent][neighbor]['cost_table'][change_action][neighbor_action]
+                    action_gains[change_action] +=  cur_cost - change_action_cost
+
+                #choose 
+                temperature = 5
+                p = np.exp(action_gains[change_action] / temperature)
+                probs.append(p)
+            
+            chosen_action = np.random.choice([0, 1, 2], p=probs/np.sum(probs))
+            G.nodes[agent]['action'] = chosen_action
+        # Calculate the avg cost per iteration
+        avg_cost = 0
+        for u,v in G.edges():
+            avg_cost += G[u][v]['cost_table'][G.nodes[u]['action']][G.nodes[v]['action']]
+        avg_cost = avg_cost / len(G.edges())
+        average_costs.append(avg_cost)
+
+    return average_costs
+
 def run_mgm_algorithm(G, num_iterations):
     # Implement MGM algorithm here
 
@@ -129,10 +156,10 @@ def run_mgm_algorithm(G, num_iterations):
                 for neighbor in G.neighbors(agent):
                     # receive information from neighbors
                     neighbor_action = G.nodes[neighbor]['action']
-                    # calculate the maximum gain if action is changed
+                    # calculate the maximum decrease in cost if action is changed
                     cur_cost = G[agent][neighbor]['cost_table'][agent_action][neighbor_action]
                     change_action_cost = G[agent][neighbor]['cost_table'][change_action][neighbor_action]
-                    cur_gain += change_action_cost - cur_cost
+                    cur_gain += cur_cost - change_action_cost
                 if cur_gain > max_agent_gain:
                     max_agent_gain = cur_gain
                     optimal_action = change_action
@@ -143,39 +170,43 @@ def run_mgm_algorithm(G, num_iterations):
                 neighbor_action = G.nodes[neighbor]['action']
                 cur_cost = G[agent][neighbor]['cost_table'][agent_action][neighbor_action]
                 change_action_cost = G[agent][neighbor]['cost_table'][optimal_action][neighbor_action]
-                cur_gain = change_action_cost - cur_cost
+                cur_gain = cur_cost - change_action_cost
                 max_neighbor_gain = max(max_neighbor_gain, cur_gain)
             
             if max_neighbor_gain < max_agent_gain:
                 # change action if agent gain is more than neighbors
                 G.nodes[agent]['action'] = optimal_action
 
-            # Calculate the avg cost
-            avg_cost = 0
-            for u,v in G.edges():
-                avg_cost += G[u][v]['cost_table'][G.nodes[u]['action']][G.nodes[v]['action']]
-            avg_cost = avg_cost / len(G.edges())
-            average_costs.append(avg_cost)
+        # Calculate the avg cost
+        avg_cost = 0
+        for u,v in G.edges():
+            avg_cost += G[u][v]['cost_table'][G.nodes[u]['action']][G.nodes[v]['action']]
+        avg_cost = avg_cost / len(G.edges())
+        average_costs.append(avg_cost)
 
     return average_costs
 
 def main():
-    num_agents = 10
-    edge_density = 0.2
+    num_agents = 100
+    edge_density = 0.1
     num_instances = 10
-    num_iterations = 1000
+    num_iterations = 200
     dsa_costs = []
     mgm_costs = []
+    dsan_costs = []
     for _ in range(num_instances):
         G = create_random_dcop(num_agents, edge_density)
         create_cost_tables(G)
         assign_initial_actions(G)
-        print(G.edges(data=True))
+        # print(G.edges(data=True))
         dsa_cost = run_dsa_algorithm(G, num_iterations)
+        assign_initial_actions(G)
+        dsan_cost = run_dsan_algorithm(G, num_iterations)
         assign_initial_actions(G)
         mgm_cost = run_mgm_algorithm(G, num_iterations)
         dsa_costs.append(dsa_cost)
         mgm_costs.append(mgm_cost)
+        dsan_costs.append(dsan_cost)
     
     
     # Average performance for each iteration across 10 instances, 
@@ -195,11 +226,35 @@ def main():
         avg_cost = total_cost / num_instances
         avg_dsa_costs.append(avg_cost)
 
+    avg_dsan_costs = []
+    for i in range(num_iterations):
+        total_cost = 0
+        for j in range(num_instances):
+            total_cost += dsan_costs[j][i]
+        avg_cost = total_cost / num_instances
+        avg_dsan_costs.append(avg_cost)
+
+    # local minimas
+    def local_minimas(costs):
+        minimas = [costs[0]]
+        for i in range(1, len(costs)):
+            minimas.append(min(minimas[-1], costs[i]))
+        return minimas
+    
+    min_dsa_costs = local_minimas(avg_dsa_costs)
+    min_mgm_costs = local_minimas(avg_mgm_costs)
+    min_dsan_costs = local_minimas(avg_dsan_costs)
+
     avg_dsa_cost = np.mean(dsa_costs, axis=0)
     avg_mgm_cost = np.mean(mgm_costs, axis=0)
 
     plt.plot(avg_dsa_costs, label='DSA')
     plt.plot(avg_mgm_costs, label='MGM')
+    plt.plot(avg_dsan_costs, label = 'DSAN')
+    plt.plot(min_dsa_costs, label='DSA Minimas')
+    plt.plot(min_mgm_costs, label='MGM Minimas')
+    plt.plot(min_dsan_costs, label = 'DSAN Minimas')
+
     plt.xlabel('Iterations')
     plt.ylabel('Average Cost')
     plt.title('Algorithm Performance Comparison')
@@ -214,3 +269,13 @@ if __name__ == "__main__":
 
 
 
+# NEXT
+# Number of messages(x) vs. cost (y)
+# Varying number of edge densities
+# Varying number of nodes
+# Varying type of graph structures (erdos_reyni, barabasi_albert, etc...)
+# Make latex report of the results of the different algorithms, paragraph
+# Play around with temperature param in DSAN (Best temperature for each graph structure randomizing edge density, nodes, etc...)
+#play around with "threshold" value in DSA
+# play around with num of actions (currently 3)
+# Write a script to automate experiments above (do mock runs to see if it works)

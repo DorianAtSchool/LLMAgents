@@ -36,8 +36,12 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-def create_random_dcop(num_agents, edge_density):
-    G = nx.complete_graph(num_agents)
+def create_random_dcop(num_agents, edge_density, graph_type):
+    if graph_type == 'complete':
+        G = nx.complete_graph(num_agents)
+    elif graph_type == 'barabasi_albert':
+        G = nx.barabasi_albert_graph(num_agents, 2)
+
     edges = list(G.edges())
     num_edges = len(edges)
     num_keep_edges = int(num_edges * edge_density)
@@ -52,25 +56,26 @@ def create_random_dcop(num_agents, edge_density):
     #     G[u][v]['cost'] = np.random.randint(1, 11)  # Random cost between 1 and 10
     return G
 
-def create_cost_tables(G):
-    # Each edge has a cost table based on the possible actions of the agents (both agents have actions between 0-2, costing between 1- 10)
+def create_cost_tables(G, num_actions, cost_range=101):
+    # Each edge has a cost table based on the possible actions of the agents (both agents have actions between 0-num_actions, costing between 1- 100)
     for u, v in G.edges():
-        G[u][v]['cost_table'] = np.random.randint(1, 101, size=(3, 3))
+        G[u][v]['cost_table'] = np.random.randint(1, cost_range, size=(num_actions, num_actions))
 
-def assign_initial_actions(G):
+def assign_initial_actions(G, num_actions):
     # Randomly assign initial actions to agents
     for agent in G.nodes():
-        G.nodes[agent]['action'] = np.random.randint(0, 3)
+        G.nodes[agent]['action'] = np.random.randint(0, num_actions)
 
-def run_dsa_algorithm(G, num_iterations):
+def run_dsa_algorithm(G, num_iterations, num_actions, threshold):
     # Implement DSA algorithm here
     average_costs = []
     for i in range(num_iterations):
         for agent in G.nodes():
             agent_action = G.nodes[agent]['action']
-            action_gains = {0: 0, 1: 0, 2: 0}
+            # action_gains = {0: 0, 1: 0, 2: 0}
+            action_gains = {i: 0 for i in range(num_actions)}
             optimal_action = agent_action
-            for change_action in range(3):
+            for change_action in range(num_actions):
                 max_gain = 0
                 for neighbor in G.neighbors(agent):
                     # receive information from neighbors
@@ -84,11 +89,11 @@ def run_dsa_algorithm(G, num_iterations):
                     max_gain = action_gains[change_action]
                     optimal_action = change_action
             
-            #choose random index of action with 95% probability of choosing the optimal action
+            #choose random index of action with threshold = probability of choosing the optimal action
             
-            threshold = 0.95
-            p = [.025 if i != optimal_action else threshold for i in range(3)]
-            optimal_action = np.random.choice([0, 1, 2], p=p)
+            # threshold = 0.95
+            p = [(1 - threshold) / (num_actions - 1) if i != optimal_action else threshold for i in range(num_actions)]
+            optimal_action = np.random.choice([i for i in range(num_actions)], p=p)
             G.nodes[agent]['action'] = optimal_action
         # Calculate the avg cost per iteration
         avg_cost = 0
@@ -99,16 +104,16 @@ def run_dsa_algorithm(G, num_iterations):
 
     return average_costs
 
-def run_dsan_algorithm(G, num_iterations):
+def run_dsan_algorithm(G, num_iterations, num_actions, temperature):
     # Implement DSA algorithm here
     average_costs = []
     for i in range(num_iterations):
         for agent in G.nodes():
             probs = []
             agent_action = G.nodes[agent]['action']
-            action_gains = {0: 0, 1: 0, 2: 0}
+            action_gains = {i: 0 for i in range(num_actions)}
             
-            for change_action in range(3):
+            for change_action in range(num_actions):
                 for neighbor in G.neighbors(agent):
                     # receive information from neighbors
                     neighbor_action = G.nodes[neighbor]['action']
@@ -118,11 +123,12 @@ def run_dsan_algorithm(G, num_iterations):
                     action_gains[change_action] +=  cur_cost - change_action_cost
 
                 #choose 
-                temperature = 5
+                # temperature = 5
                 p = np.exp(action_gains[change_action] / temperature)
                 probs.append(p)
-            
-            chosen_action = np.random.choice([0, 1, 2], p=probs/np.sum(probs))
+            s = np.sum(probs)
+            probs = probs / s
+            chosen_action = np.random.choice([i for i in range(num_actions)], p=probs)
             G.nodes[agent]['action'] = chosen_action
         # Calculate the avg cost per iteration
         avg_cost = 0
@@ -133,7 +139,7 @@ def run_dsan_algorithm(G, num_iterations):
 
     return average_costs
 
-def run_mgm_algorithm(G, num_iterations):
+def run_mgm_algorithm(G, num_iterations, num_actions):
     # Implement MGM algorithm here
 
 # Then, it sends this information to all
@@ -151,7 +157,7 @@ def run_mgm_algorithm(G, num_iterations):
             optimal_action = agent_action
             # change_action = np.random.randint(0, 3)
 
-            for change_action in range(3):
+            for change_action in range(num_actions):
                 cur_gain = 0
                 for neighbor in G.neighbors(agent):
                     # receive information from neighbors
@@ -186,24 +192,31 @@ def run_mgm_algorithm(G, num_iterations):
 
     return average_costs
 
-def main():
-    num_agents = 100
-    edge_density = 0.1
+def run_experiment(num_agents, edge_density, graph_type, dsan_temperature, dsa_threshold, num_actions, niter, cost_range, experiment, path, file_name):
+
     num_instances = 10
-    num_iterations = 200
+    num_iterations = niter
+
     dsa_costs = []
     mgm_costs = []
     dsan_costs = []
     for _ in range(num_instances):
-        G = create_random_dcop(num_agents, edge_density)
-        create_cost_tables(G)
-        assign_initial_actions(G)
-        # print(G.edges(data=True))
-        dsa_cost = run_dsa_algorithm(G, num_iterations)
-        assign_initial_actions(G)
-        dsan_cost = run_dsan_algorithm(G, num_iterations)
-        assign_initial_actions(G)
-        mgm_cost = run_mgm_algorithm(G, num_iterations)
+        if graph_type != 'erdos_renyi':
+            G = create_random_dcop(num_agents, edge_density, graph_type)
+        else:
+            G = nx.erdos_renyi_graph(num_agents, p=edge_density)
+
+        create_cost_tables(G, num_actions, cost_range)
+
+        assign_initial_actions(G, num_actions)
+        dsa_cost = run_dsa_algorithm(G, num_iterations, num_actions, dsa_threshold)
+
+        assign_initial_actions(G, num_actions)
+        dsan_cost = run_dsan_algorithm(G, num_iterations, num_actions, dsan_temperature)
+
+        assign_initial_actions(G, num_actions)
+        mgm_cost = run_mgm_algorithm(G, num_iterations, num_actions)
+
         dsa_costs.append(dsa_cost)
         mgm_costs.append(mgm_cost)
         dsan_costs.append(dsan_cost)
@@ -245,21 +258,63 @@ def main():
     min_mgm_costs = local_minimas(avg_mgm_costs)
     min_dsan_costs = local_minimas(avg_dsan_costs)
 
-    avg_dsa_cost = np.mean(dsa_costs, axis=0)
-    avg_mgm_cost = np.mean(mgm_costs, axis=0)
+    # avg_dsa_cost = np.mean(dsa_costs, axis=0)
+    # avg_mgm_cost = np.mean(mgm_costs, axis=0)
 
     plt.plot(avg_dsa_costs, label='DSA')
     plt.plot(avg_mgm_costs, label='MGM')
     plt.plot(avg_dsan_costs, label = 'DSAN')
-    plt.plot(min_dsa_costs, label='DSA Minimas')
-    plt.plot(min_mgm_costs, label='MGM Minimas')
-    plt.plot(min_dsan_costs, label = 'DSAN Minimas')
+    # plt.plot(min_dsa_costs, label='DSA Minimas')
+    # plt.plot(min_mgm_costs, label='MGM Minimas')
+    # plt.plot(min_dsan_costs, label = 'DSAN Minimas')
 
     plt.xlabel('Iterations')
     plt.ylabel('Average Cost')
-    plt.title('Algorithm Performance Comparison')
+    plt.title(f'Algorithm Performance Comparison - {experiment} Experiment')
+    # put to the right of the graph the parameters of the experiment in small font in a column
+    plt.text(0.65, 0.865, f'Agents: {num_agents}\nEdge Density: {edge_density}\nDSAN Temperature: {dsan_temperature}\nDSA Threshold: {dsa_threshold}\nNum Actions: {num_actions}\nNum Iterations: {niter}\nCost Range: {cost_range}\n Graph: {graph_type}', fontsize=8, ha='center', va='center', transform=plt.gca().transAxes)
+    
     plt.legend()
-    plt.show()
+    # download the plot in /DCOP_GRAPHS folder
+    plt.savefig(f'{path}/{file_name}.png')
+    # clear the plot
+    plt.clf()
+
+def main():
+    num_agents_list = [10, 25, 50, 75, 90, 100]
+    edge_density_list = [0.1, 0.25, 0.5, 0.75, 0.9, .99]
+    graph_types = ['complete','erdos_renyi', 'barabasi_albert',]
+    dsan_temperatures = [0.75, 1.0, 2.0, 5.0, 10.0]
+    dsa_thresholds = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
+    num_actions_list = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    num_iterations = [50, 100, 200, 500, 1000]
+    cost_ranges = [4, 11, 51, 101, 501, 1001]
+
+    # for graph_type in graph_types:
+    #     run_experiment(num_agents=100, edge_density=0.1, graph_type=graph_type, dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'graph_type', path = './DCOP_GRAPHS/By_graph_type',  file_name = graph_type)
+
+    # for num_agents in num_agents_list:
+    #     run_experiment(num_agents=num_agents, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'num_agents', path = './DCOP_GRAPHS/By_num_agents',  file_name = f'{num_agents}_agents')
+    
+    # for edge_density in edge_density_list:
+    #     run_experiment(num_agents=100, edge_density=edge_density, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'edge_density', path = './DCOP_GRAPHS/By_edge_density',  file_name = f'{edge_density}_edge_density')
+    
+    for dsan_temperature in dsan_temperatures:
+        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=dsan_temperature, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'dsan_temperature', path = './DCOP_GRAPHS/By_dsan_temp',  file_name = f'{dsan_temperature}_dsan_temp')
+    
+    for dsa_threshold in dsa_thresholds:
+        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=dsa_threshold, num_actions=3, niter=200, cost_range=101, experiment = 'dsa_threshold', path = './DCOP_GRAPHS/By_dsa_threshold',  file_name = f'{dsa_threshold}_dsa_threshold')
+    
+    for num_actions in num_actions_list:
+        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=num_actions, niter=200, cost_range=101, experiment = 'num_actions', path = './DCOP_GRAPHS/By_num_actions',  file_name = f'{num_actions}_actions')
+    
+    for niter in num_iterations:
+        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=niter, cost_range=101, experiment = 'num_iterations', path = './DCOP_GRAPHS/By_num_iterations',  file_name = f'{niter}_iterations')
+    
+    for cost_range in cost_ranges:
+        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=cost_range, experiment = 'cost_range', path = './DCOP_GRAPHS/By_cost_range',  file_name = f'1-{cost_range}_cost_range')
+    
+
 if __name__ == "__main__":
     main()
 

@@ -288,16 +288,16 @@ def main():
     dsa_thresholds = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
     num_actions_list = [2, 3, 4, 5, 6, 7, 8, 9, 10]
     num_iterations = [50, 100, 200, 500, 1000]
-    cost_ranges = [4, 11, 51, 101, 501, 1001]
+    cost_ranges = [4, 11, 51, 101, 501]
 
-    # for graph_type in graph_types:
-    #     run_experiment(num_agents=100, edge_density=0.1, graph_type=graph_type, dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'graph_type', path = './DCOP_GRAPHS/By_graph_type',  file_name = graph_type)
+    for graph_type in graph_types:
+        run_experiment(num_agents=100, edge_density=0.1, graph_type=graph_type, dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'graph_type', path = './DCOP_GRAPHS/By_graph_type',  file_name = graph_type)
 
-    # for num_agents in num_agents_list:
-    #     run_experiment(num_agents=num_agents, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'num_agents', path = './DCOP_GRAPHS/By_num_agents',  file_name = f'{num_agents}_agents')
+    for num_agents in num_agents_list:
+        run_experiment(num_agents=num_agents, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'num_agents', path = './DCOP_GRAPHS/By_num_agents',  file_name = f'{num_agents}_agents')
     
-    # for edge_density in edge_density_list:
-    #     run_experiment(num_agents=100, edge_density=edge_density, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'edge_density', path = './DCOP_GRAPHS/By_edge_density',  file_name = f'{edge_density}_edge_density')
+    for edge_density in edge_density_list:
+        run_experiment(num_agents=100, edge_density=edge_density, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'edge_density', path = './DCOP_GRAPHS/By_edge_density',  file_name = f'{edge_density}_edge_density')
     
     for dsan_temperature in dsan_temperatures:
         run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=dsan_temperature, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'dsan_temperature', path = './DCOP_GRAPHS/By_dsan_temp',  file_name = f'{dsan_temperature}_dsan_temp')
@@ -312,9 +312,22 @@ def main():
         run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=niter, cost_range=101, experiment = 'num_iterations', path = './DCOP_GRAPHS/By_num_iterations',  file_name = f'{niter}_iterations')
     
     for cost_range in cost_ranges:
-        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=cost_range, experiment = 'cost_range', path = './DCOP_GRAPHS/By_cost_range',  file_name = f'1-{cost_range}_cost_range')
+          run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=cost_range, experiment = 'cost_range', path = './DCOP_GRAPHS/By_cost_range',  file_name = f'1-{cost_range}_cost_range')
     
-
+    # for num_agents in num_agents_list:
+    #     for edge_density in edge_density_list:
+    #         for graph_type in graph_types:
+    #             for dsan_temperature in dsan_temperatures:
+    #                 for dsa_threshold in dsa_thresholds:
+    #                     for num_actions in num_actions_list:
+    #                         for niter in num_iterations:
+    #                             for cost_range in cost_ranges:
+    #                                 try:
+    #                                     run_experiment(num_agents=num_agents, edge_density=edge_density, graph_type=graph_type, dsan_temperature=dsan_temperature, dsa_threshold=dsa_threshold, num_actions=num_actions, niter=niter, cost_range=cost_range, experiment = 'all graphs', path = './DCOP_GRAPHS/All_graphs',  file_name = f'{num_agents}_{edge_density}_{graph_type}_{dsan_temperature}_{dsa_threshold}_{num_actions}_{niter}_{cost_range}')
+    #                                 except:
+    #                                     with open('errors.txt', 'a') as f:
+    #                                         f.write(f'Error in {num_agents}_{edge_density}_{graph_type}_{dsan_temperature}_{dsa_threshold}_{num_actions}_{niter}_{cost_range}\n')
+    #                                     continue
 if __name__ == "__main__":
     main()
 
@@ -331,6 +344,6 @@ if __name__ == "__main__":
 # Varying type of graph structures (erdos_reyni, barabasi_albert, etc...)
 # Make latex report of the results of the different algorithms, paragraph
 # Play around with temperature param in DSAN (Best temperature for each graph structure randomizing edge density, nodes, etc...)
-#play around with "threshold" value in DSA
+# play around with "threshold" value in DSA
 # play around with num of actions (currently 3)
 # Write a script to automate experiments above (do mock runs to see if it works)

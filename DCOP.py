@@ -35,6 +35,7 @@
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def create_random_dcop(num_agents, edge_density, graph_type):
     if graph_type == 'complete':
@@ -124,11 +125,13 @@ def run_dsan_algorithm(G, num_iterations, num_actions, temperature):
 
                 #choose 
                 # temperature = 5
-                p = np.exp(action_gains[change_action] / temperature)
+                # action_gains = np.array(action_gains)
+                p = np.exp((action_gains[change_action]) / temperature)
                 probs.append(p)
+            probs = np.array(probs) + 10**-9
             s = np.sum(probs)
             probs = probs / s
-            chosen_action = np.random.choice([i for i in range(num_actions)], p=probs)
+            chosen_action = np.random.choice([i for i in range(num_actions)], p= probs)
             G.nodes[agent]['action'] = chosen_action
         # Calculate the avg cost per iteration
         avg_cost = 0
@@ -290,29 +293,29 @@ def main():
     num_iterations = [50, 100, 200, 500, 1000]
     cost_ranges = [4, 11, 51, 101, 501]
 
-    for graph_type in graph_types:
-        run_experiment(num_agents=100, edge_density=0.1, graph_type=graph_type, dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'graph_type', path = './DCOP_GRAPHS/By_graph_type',  file_name = graph_type)
+    # for graph_type in graph_types:
+    #     run_experiment(num_agents=100, edge_density=0.1, graph_type=graph_type, dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'graph_type', path = './DCOP_GRAPHS/By_graph_type',  file_name = graph_type)
 
-    for num_agents in num_agents_list:
-        run_experiment(num_agents=num_agents, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'num_agents', path = './DCOP_GRAPHS/By_num_agents',  file_name = f'{num_agents}_agents')
+    # for num_agents in num_agents_list:
+    #     run_experiment(num_agents=num_agents, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'num_agents', path = './DCOP_GRAPHS/By_num_agents',  file_name = f'{num_agents}_agents')
     
-    for edge_density in edge_density_list:
-        run_experiment(num_agents=100, edge_density=edge_density, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'edge_density', path = './DCOP_GRAPHS/By_edge_density',  file_name = f'{edge_density}_edge_density')
+    # for edge_density in edge_density_list:
+    #     run_experiment(num_agents=100, edge_density=edge_density, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'edge_density', path = './DCOP_GRAPHS/By_edge_density',  file_name = f'{edge_density}_edge_density')
     
-    for dsan_temperature in dsan_temperatures:
-        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=dsan_temperature, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'dsan_temperature', path = './DCOP_GRAPHS/By_dsan_temp',  file_name = f'{dsan_temperature}_dsan_temp')
+    # for dsan_temperature in dsan_temperatures:
+    #     run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=dsan_temperature, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=101, experiment = 'dsan_temperature', path = './DCOP_GRAPHS/By_dsan_temp',  file_name = f'{dsan_temperature}_dsan_temp')
     
-    for dsa_threshold in dsa_thresholds:
-        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=dsa_threshold, num_actions=3, niter=200, cost_range=101, experiment = 'dsa_threshold', path = './DCOP_GRAPHS/By_dsa_threshold',  file_name = f'{dsa_threshold}_dsa_threshold')
+    # for dsa_threshold in dsa_thresholds:
+    #     run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=dsa_threshold, num_actions=3, niter=200, cost_range=101, experiment = 'dsa_threshold', path = './DCOP_GRAPHS/By_dsa_threshold',  file_name = f'{dsa_threshold}_dsa_threshold')
     
-    for num_actions in num_actions_list:
-        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=num_actions, niter=200, cost_range=101, experiment = 'num_actions', path = './DCOP_GRAPHS/By_num_actions',  file_name = f'{num_actions}_actions')
+    # for num_actions in num_actions_list:
+    #     run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=num_actions, niter=200, cost_range=101, experiment = 'num_actions', path = './DCOP_GRAPHS/By_num_actions',  file_name = f'{num_actions}_actions')
     
-    for niter in num_iterations:
-        run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=niter, cost_range=101, experiment = 'num_iterations', path = './DCOP_GRAPHS/By_num_iterations',  file_name = f'{niter}_iterations')
+    # for niter in num_iterations:
+    #     run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=niter, cost_range=101, experiment = 'num_iterations', path = './DCOP_GRAPHS/By_num_iterations',  file_name = f'{niter}_iterations')
     
-    for cost_range in cost_ranges:
-          run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=5.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=cost_range, experiment = 'cost_range', path = './DCOP_GRAPHS/By_cost_range',  file_name = f'1-{cost_range}_cost_range')
+    for cost_range in tqdm(cost_ranges):
+          run_experiment(num_agents=100, edge_density=0.1, graph_type='complete', dsan_temperature=1.0, dsa_threshold=0.95, num_actions=3, niter=200, cost_range=cost_range, experiment = 'cost_range', path = './DCOP_GRAPHS/By_cost_range',  file_name = f'1-{cost_range}_cost_range')
     
     # for num_agents in num_agents_list:
     #     for edge_density in edge_density_list:
@@ -347,3 +350,23 @@ if __name__ == "__main__":
 # play around with "threshold" value in DSA
 # play around with num of actions (currently 3)
 # Write a script to automate experiments above (do mock runs to see if it works)
+
+# DSAN: Temp (x) vs.  best cost (y) graph
+# DSA: threshold vs. best cost
+# enlarge graphs
+# create a dataset for performance prediction
+    # DSA - num agents, cost range, edge density, graph type, number of action choices, DSA's throshold paramter , num iterations (x features) vs. best cost (y)
+    # ^^ pick random from list for each feature (so for num agents: pick random number from 1-100) -> run DSA -> get best Y value across all itrations
+    # repeat ~ 1000 times or however many
+    # train neural network / decision tree/ regression to predict future performance
+    # sklearn have those
+    # Evaluate mode: optimize DSA threshold paramter using this model
+    # for example, keep other vairbales constant and change threshold in increments of say .1 from .1 to 10 to make prediction. 
+    # pick best temp value based on those predicitons
+    # run dsa using that paramter for that problem
+    # create 1000 test DCOP problems, predict threshold paramter for each, run DSA for that problem, get best cost, average best costs across 1000 problems for a single value
+    # create 1000 test DCOP problems, choose a static thrshold paramter for all problems, run DSA for that problem, get best cost, average best costs across 1000 problems for a single value
+    # repeat line above 5 times with different  static thrsholds
+    # make bar graphs of threshold vs. final value
+
+# do same for DSAN

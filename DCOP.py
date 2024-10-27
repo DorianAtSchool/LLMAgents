@@ -841,3 +841,13 @@ if __name__ == "__main__":
     # make bar graphs of threshold vs. final value
 
 # do same for DSAN
+
+################
+
+# Python multiprocesses to parrallalize experiments, Julia for faster computation
+# Debug DSAN algorithm
+# 3-5 instances of each experiment
+# Static and prediction bars vs cost - graph
+# get rid of negative vals
+# LOOK AT LINES 629-630
+# Start small with ~ 50 tests

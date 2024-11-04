@@ -880,7 +880,7 @@ def main():
     plt.xlabel('Predicted/Static Threshold')
     plt.ylabel('Avg Best Cost')
     plt.title('Predicted and Statoc DSA Threshold vs. Avg Best Cost')
-    plt.savefig('./DCOP_GRAPHS/DSA/Predicted_Static_DSA_Threshold_vs_Avg_Best_Cost_Scatter.png')
+    plt.savefig('./DCOP_GRAPHS/DSA/Predicted_Static_DSA_Threshold_vs_Avg_Best_Cost_Scatter_2.png')
     plt.show()
     plt.clf()
 
@@ -941,3 +941,18 @@ if __name__ == "__main__":
 
 # Potential breaking issue: .99 theoretically always has the best cost so model almost always predicts it
 # Another potential issue: the costs for static threshold are across 50 iterations for each threshold, while the predicted threshold costs are 50 iterations across all thresholds, so each threshold is not across 50 iterations. FIX: maybe run the predicted thresholds until at least 2 thresholds are get run 50 times
+
+
+##################
+
+# create new file (.ipynb) just for graph producing given data (best costs) in the form of csv file
+# fix bar graphs
+# add std dev to bar/scatter graphs, std mean error
+# convert script to notebooks
+
+
+# NLP task - google colab
+# huggingface generate function with model llama3.2-3b
+# load hugging face model (llama) in 4 bits (instead of 32 bits) "quantization"
+# generate general prompts for the model using generation function
+# calculate probability of a sentence given a prompt using the generation function (look into params), calculate the softmax prob of each token in sentence and multiply to get probability of sentence

@@ -43,6 +43,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error
 import joblib
+from scipy.special import softmax
 
 def create_random_dcop(num_agents, edge_density, graph_type):
     if graph_type == 'complete':
@@ -134,13 +135,21 @@ def run_dsan_algorithm(G, num_iterations, num_actions, temperature):
                 # temperature = 5
                 # action_gains = np.array(action_gains)
                 
-                p = np.exp((action_gains[change_action]) / temperature)
-                probs.append(p)
-            
-    
-            s = np.sum(probs)
-            probs = probs / s
+                #p = np.exp((action_gains[change_action]) / temperature)
+                #probs.append(p)
+            action_gains = np.array(list(action_gains.values()))
+            probs = softmax(action_gains / temperature)
+            #softmax probs
+            # probs = np.array(probs)
+            # probs = softmax(probs)
 
+
+            # print(probs)
+            # s = np.sum(probs)
+            # print(s)
+            # probs = probs / s
+            # print(probs)
+            # print(np.sum(probs))
             # try:
             chosen_action = np.random.choice([i for i in range(num_actions)], p= probs)
             # except:
@@ -443,8 +452,8 @@ def create_dataset_dsan():
             i += 1
             pbar.update(1)  
         except:
-            print('error', i)
-            continue
+            print('error', i, 'params:', n_agent, e_density, g_type, d_temp, n_actions, n_iter, c_range)
+            break
         
 
 # create a dataset for performance prediction
@@ -506,7 +515,7 @@ def train_decision_tree(dataset):
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.1, random_state=42)
 
     # Train the decision tree classifier
-    clf = RandomForestRegressor()
+    clf = RandomForestRegressor(max_depth=55, random_state=42, n_estimators=1000)
     clf.fit(X_train, y_train)
     
     y_pred = clf.predict(X_train)
@@ -521,7 +530,7 @@ def train_decision_tree(dataset):
     print(f'Test Accuracy: {accuracy}')
 
     # Save the model
-    joblib.dump(clf, 'dsa_model.pkl')
+    joblib.dump(clf, 'dsan_model.pkl')
     return clf
 
 def main():
@@ -713,9 +722,9 @@ def main():
 
     # create_dataset_dsa()
     # create_dataset_dsan()
-
-    #model = train_decision_tree(pd.read_csv('./DCOP_GRAPHS/DSA/dsa_dataset_2.csv'))
-    model = joblib.load('dsa_model.pkl')
+    
+    train_decision_tree(pd.read_csv('./DCOP_GRAPHS/DSAN/dsan_dataset_2.csv'))
+    # model = joblib.load('dsa_model.pkl')
     # use the model to check if it predicts correctly for live data
 
     # t_vals = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
@@ -773,97 +782,97 @@ def main():
     # run dsa using that paramter for that problem
 
     # t_vals = np.arange(0.01, 1.1, .01) # This has to be between 0-1 since dataset was created with that range
-    t_vals = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
-    t_costs = { t: [] for t in t_vals}
-    best_costs = []
-    pbar = tqdm(total=50)
-    i = 0
-    while i < 50:
-        # generate a random problem
-        n_agent = np.random.choice(num_agents_list)
-        e_density = np.random.choice(edge_density_list)
-        g_type = np.random.choice(graph_types)
-        n_actions = np.random.choice(num_actions_list)
-        n_iter = np.random.choice(num_iterations)
-        c_range = np.random.choice(cost_ranges)
+    # t_vals = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
+    # t_costs = { t: [] for t in t_vals}
+    # best_costs = []
+    # pbar = tqdm(total=50)
+    # i = 0
+    # while i < 50:
+    #     # generate a random problem
+    #     n_agent = np.random.choice(num_agents_list)
+    #     e_density = np.random.choice(edge_density_list)
+    #     g_type = np.random.choice(graph_types)
+    #     n_actions = np.random.choice(num_actions_list)
+    #     n_iter = np.random.choice(num_iterations)
+    #     c_range = np.random.choice(cost_ranges)
 
-        #preprocess g_type to 0,1,2
-        g_type_num = {'complete': 0, 'erdos_renyi': 1, 'barabasi_albert': 2}[g_type]
+    #     #preprocess g_type to 0,1,2
+    #     g_type_num = {'complete': 0, 'erdos_renyi': 1, 'barabasi_albert': 2}[g_type]
 
-        # make predictions
-        predictions = {}
-        for t in t_vals:
-            df = pd.DataFrame({'num_agents': [n_agent], 'edge_density': [e_density], 'graph_type': [g_type_num], 'dsa_threshold': [t], 'num_actions': [n_actions], 'num_iterations': [n_iter], 'cost_range': [c_range]})
-            # make a prediction
-            y_pred = model.predict(df)
-            predictions[t] = y_pred[0]
-        print(predictions)
-        best_threshold = min(predictions, key=predictions.get)
-        print(best_threshold)
-        # t_costs[best_threshold].append(predictions[best_threshold])
+    #     # make predictions
+    #     predictions = {}
+    #     for t in t_vals:
+    #         df = pd.DataFrame({'num_agents': [n_agent], 'edge_density': [e_density], 'graph_type': [g_type_num], 'dsa_threshold': [t], 'num_actions': [n_actions], 'num_iterations': [n_iter], 'cost_range': [c_range]})
+    #         # make a prediction
+    #         y_pred = model.predict(df)
+    #         predictions[t] = y_pred[0]
+    #     print(predictions)
+    #     best_threshold = min(predictions, key=predictions.get)
+    #     print(best_threshold)
+    #     # t_costs[best_threshold].append(predictions[best_threshold])
 
-        # try:
-        min_cost = run_dsa_experiment(num_agents=n_agent, edge_density=e_density, graph_type=g_type, dsa_threshold=best_threshold, num_actions=n_actions, niter=n_iter, cost_range=c_range, experiment = 'dsa_dataset', path = './DCOP_GRAPHS/DSA',  file_name = f'{n_agent}_{e_density}_{g_type}_{best_threshold}_{n_actions}_{n_iter}_{c_range}')
-        t_costs[best_threshold].append(min_cost)
-        best_costs.append(min_cost)
-        i += 1
-        pbar.update(1)
-        # except:
-        #     print('error', i)
-        #     continue
+    #     # try:
+    #     min_cost = run_dsa_experiment(num_agents=n_agent, edge_density=e_density, graph_type=g_type, dsa_threshold=best_threshold, num_actions=n_actions, niter=n_iter, cost_range=c_range, experiment = 'dsa_dataset', path = './DCOP_GRAPHS/DSA',  file_name = f'{n_agent}_{e_density}_{g_type}_{best_threshold}_{n_actions}_{n_iter}_{c_range}')
+    #     t_costs[best_threshold].append(min_cost)
+    #     best_costs.append(min_cost)
+    #     i += 1
+    #     pbar.update(1)
+    #     # except:
+    #     #     print('error', i)
+    #     #     continue
         
 
-    best_cost = np.mean(best_costs)
-    print(best_cost)
+    # best_cost = np.mean(best_costs)
+    # print(best_cost)
 
-    t_costs = {k: sum(v)/len(v) for k,v in t_costs.items() if len(v) > 0}
-    print(t_costs)
-    # bar plot
-    # plt.bar(t_costs.keys(), t_costs.values(), width=.5)
-    # plt.xlabel('Predicted Threshold')
-    # plt.ylabel('Avg Best Cost')
-    # plt.title('Predicted DSA Threshold vs. Avg Best Cost')
-    # plt.savefig('./DCOP_GRAPHS/DSA/Predicted_DSA_Threshold_vs_Avg_Best_Cost_2.png')
-    # plt.show()
-    # plt.clf()
+    # t_costs = {k: sum(v)/len(v) for k,v in t_costs.items() if len(v) > 0}
+    # print(t_costs)
+    # # bar plot
+    # # plt.bar(t_costs.keys(), t_costs.values(), width=.5)
+    # # plt.xlabel('Predicted Threshold')
+    # # plt.ylabel('Avg Best Cost')
+    # # plt.title('Predicted DSA Threshold vs. Avg Best Cost')
+    # # plt.savefig('./DCOP_GRAPHS/DSA/Predicted_DSA_Threshold_vs_Avg_Best_Cost_2.png')
+    # # plt.show()
+    # # plt.clf()
     
-    # scatter plot
-    plt.plot(t_costs.keys(), t_costs.values(), 'bo')
+    # # scatter plot
+    # plt.plot(t_costs.keys(), t_costs.values(), 'bo')
 
-    # # create 1000 test DCOP problems, choose a static temp paramter for all problems, run DSAN for that problem, get best cost, average best costs across 1000 problems for a single value
-    # # repeat line above 5 times with different  static temps
-    pbar = tqdm(total=50)
-    pbar_t = tqdm(total=6)
+    # # # create 1000 test DCOP problems, choose a static temp paramter for all problems, run DSAN for that problem, get best cost, average best costs across 1000 problems for a single value
+    # # # repeat line above 5 times with different  static temps
+    # pbar = tqdm(total=50)
+    # pbar_t = tqdm(total=6)
 
-    dsa_thresholds = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
-    t_costs = {}
-    for t in dsa_thresholds:
-        best_costs = []
-        i = 0
-        while i < 50:
-            # generate a random problem
-            n_agent = np.random.choice(num_agents_list)
-            e_density = np.random.choice(edge_density_list)
-            g_type = np.random.choice(graph_types)
-            n_actions = np.random.choice(num_actions_list)
-            n_iter = np.random.choice(num_iterations)
-            c_range = np.random.choice(cost_ranges)
+    # dsa_thresholds = [0.1, 0.25, 0.5, .75, 0.9, 0.99]
+    # t_costs = {}
+    # for t in dsa_thresholds:
+    #     best_costs = []
+    #     i = 0
+    #     while i < 50:
+    #         # generate a random problem
+    #         n_agent = np.random.choice(num_agents_list)
+    #         e_density = np.random.choice(edge_density_list)
+    #         g_type = np.random.choice(graph_types)
+    #         n_actions = np.random.choice(num_actions_list)
+    #         n_iter = np.random.choice(num_iterations)
+    #         c_range = np.random.choice(cost_ranges)
 
-            #preprocess g_type to 0,1,2
-            # g_type_num = {'complete': 0, 'erdos_renyi': 1, 'barabasi_albert': 2}[g_type]
+    #         #preprocess g_type to 0,1,2
+    #         # g_type_num = {'complete': 0, 'erdos_renyi': 1, 'barabasi_albert': 2}[g_type]
 
-            # try:
-            min_cost = run_dsa_experiment(num_agents=n_agent, edge_density=e_density, graph_type=g_type, dsa_threshold=t, num_actions=n_actions, niter=n_iter, cost_range=c_range, experiment = 'dsa_dataset', path = './DCOP_GRAPHS/DSA',  file_name = f'{n_agent}_{e_density}_{g_type}_{t}_{n_actions}_{n_iter}_{c_range}')
-            best_costs.append(min_cost)
-            i += 1
-            pbar.update(1)
-            # except:
-            #     print('error', i)
-            #     continue
+    #         # try:
+    #         min_cost = run_dsa_experiment(num_agents=n_agent, edge_density=e_density, graph_type=g_type, dsa_threshold=t, num_actions=n_actions, niter=n_iter, cost_range=c_range, experiment = 'dsa_dataset', path = './DCOP_GRAPHS/DSA',  file_name = f'{n_agent}_{e_density}_{g_type}_{t}_{n_actions}_{n_iter}_{c_range}')
+    #         best_costs.append(min_cost)
+    #         i += 1
+    #         pbar.update(1)
+    #         # except:
+    #         #     print('error', i)
+    #         #     continue
             
-        best_cost = np.mean(best_costs)
-        t_costs[t] = best_cost
-        pbar_t.update(1)
+    #     best_cost = np.mean(best_costs)
+    #     t_costs[t] = best_cost
+    #     pbar_t.update(1)
         
     # make bar graphs of threshold vs. final value
     # plt.bar(t_costs.keys(), t_costs.values())
@@ -876,13 +885,13 @@ def main():
 
     # scatter plot
     # scatter plot
-    plt.plot(t_costs.keys(), t_costs.values(), 'go')
-    plt.xlabel('Predicted/Static Threshold')
-    plt.ylabel('Avg Best Cost')
-    plt.title('Predicted and Statoc DSA Threshold vs. Avg Best Cost')
-    plt.savefig('./DCOP_GRAPHS/DSA/Predicted_Static_DSA_Threshold_vs_Avg_Best_Cost_Scatter_2.png')
-    plt.show()
-    plt.clf()
+    # plt.plot(t_costs.keys(), t_costs.values(), 'go')
+    # plt.xlabel('Predicted/Static Threshold')
+    # plt.ylabel('Avg Best Cost')
+    # plt.title('Predicted and Statoc DSA Threshold vs. Avg Best Cost')
+    # plt.savefig('./DCOP_GRAPHS/DSA/Predicted_Static_DSA_Threshold_vs_Avg_Best_Cost_Scatter_2.png')
+    # plt.show()
+    # plt.clf()
 
     # test_dsan()
 if __name__ == "__main__":
